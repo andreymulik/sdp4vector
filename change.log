@@ -1,3 +1,5 @@
 version 0.2:
   ADDED
-    Vector instances for SDP.
+    Boxed and unboxed Vector instances for SDP.
+
+
