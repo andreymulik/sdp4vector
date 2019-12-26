@@ -22,11 +22,10 @@ module SDP.Vector.Unboxed
   module SDP.Indexed,
   module SDP.Unboxed,
   module SDP.Sort,
-  
-  Unbox,
+  module SDP.Scan,
   
   -- * Vector
-  Vector
+  Unbox, Vector
 )
 where
 
@@ -41,6 +40,7 @@ import qualified Data.Vector.Unboxed as V
 import SDP.IndexedM
 import SDP.Indexed
 import SDP.Sort
+import SDP.Scan
 
 import SDP.SortM.Tim
 import SDP.Unboxed
@@ -57,7 +57,9 @@ default ()
 
 --------------------------------------------------------------------------------
 
-{- Estimate instance. -}
+{- Scan and Estimate instances. -}
+
+instance (Unbox e, Unboxed e) => Scan (Vector e) e
 
 instance (Unbox e, Unboxed e) => Estimate (Vector e)
   where
@@ -186,8 +188,6 @@ instance (Unboxed e, Unbox e) => Thaw (ST s) (Vector e) (STByteList s Int e) whe
 instance (Unboxed e, Unbox e) => Thaw IO (Vector e) (IOBytes    Int e) where thaw = fromIndexed'
 instance (Unboxed e, Unbox e) => Thaw IO (Vector e) (IOUblist       e) where thaw = fromIndexed'
 instance (Unboxed e, Unbox e) => Thaw IO (Vector e) (IOByteList Int e) where thaw = fromIndexed'
-
-
 
 instance (Unboxed e, Unbox e) => Freeze (ST s) (STBytes    s Int e) (Vector e) where freeze = fmap fromList . getLeft
 instance (Unboxed e, Unbox e) => Freeze (ST s) (STUblist   s     e) (Vector e) where freeze = fmap fromList . getLeft

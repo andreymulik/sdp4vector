@@ -57,14 +57,7 @@ instance Zip Vector
     zipWith5 = V.zipWith5
     zipWith6 = V.zipWith6
 
-instance Scan Vector
-  where
-    scanl = V.scanl
-    scanr = V.scanr
-    
-    scanl' = V.scanl'
-    scanl1 = V.scanl1
-    scanr1 = V.scanr1
+instance Scan (Vector e) e
 
 instance Estimate (Vector e)
   where
@@ -191,8 +184,6 @@ instance Thaw IO (Vector e) (IOArray    Int e) where thaw = fromFoldableM
 instance Thaw IO (Vector e) (IOUnlist       e) where thaw = fromFoldableM
 instance Thaw IO (Vector e) (IOUnrolled Int e) where thaw = fromFoldableM
 
-
-
 instance Freeze (ST s) (STArray    s Int e) (Vector e) where freeze = fmap fromList . getLeft
 instance Freeze (ST s) (STUnlist   s     e) (Vector e) where freeze = fmap fromList . getLeft
 instance Freeze (ST s) (STUnrolled s Int e) (Vector e) where freeze = fmap fromList . getLeft
@@ -205,6 +196,5 @@ instance Freeze IO (IOUnrolled Int e) (Vector e) where freeze = fmap fromList . 
 
 done :: STArray s Int e -> ST s (Vector e)
 done =  freeze
-
 
 
