@@ -4,8 +4,8 @@ import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 
 import SDP.Vector
-import SDP.Vector.Related ()
 
+import Test.QuickCheck.Instances.Vector ()
 import Test.SDP
 
 default ()

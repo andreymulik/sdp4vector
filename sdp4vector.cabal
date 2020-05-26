@@ -36,18 +36,13 @@ Library
     base         >= 4.12 && < 5,
     sdp          >= 0.2  && < 0.3,
     sdp-ioarrays >= 0.2  && < 0.3,
-    vector       >= 0.12 && < 0.13,
-    QuickCheck   >= 2.12 && < 3,
-    data-default >= 0.7  && < 0.8
+    vector       >= 0.12 && < 0.13
   
   ghc-options: -O2 -Wall -Wno-orphans
   
   exposed-modules:
     SDP.Vector
-    SDP.Vector.Related
-    
     SDP.Vector.Unboxed
-    SDP.Vector.Unboxed.Related
 
 ---            _____  _____  _____  _____  _____  _   _  _____               ---
 ---           |_   _||  ___|/  ___||_   _||_   _|| \ | ||  __ \              ---
@@ -65,15 +60,16 @@ test-suite test-vector-boxed
   
   other-modules:
     SDP.Vector
-    SDP.Vector.Related
 
   build-depends:
     base                       >= 4.12 && < 5,
     sdp                        >= 0.2  && < 0.3,
-    vector                     >= 0.12 && < 0.13,
     sdp-ioarrays               >= 0.2  && < 0.3,
-    data-default               >= 0.7  && < 0.8,
+    vector                     >= 0.12 && < 0.13,
+    
     QuickCheck                 >= 2.12 && < 3,
+    quickcheck-instances       >= 0.3  && < 0.4,
+    
     test-framework             >= 0.8  && < 0.9,
     test-framework-quickcheck2 >= 0.3  && < 0.4
 
@@ -88,15 +84,16 @@ test-suite test-vector-unboxed
   
   other-modules:
     SDP.Vector.Unboxed
-    SDP.Vector.Unboxed.Related
 
   build-depends:
     base                       >= 4.12 && < 5,
     sdp                        >= 0.2  && < 0.3,
-    vector                     >= 0.12 && < 0.13,
     sdp-ioarrays               >= 0.2  && < 0.3,
-    data-default               >= 0.7  && < 0.8,
+    vector                     >= 0.12 && < 0.13,
+    
     QuickCheck                 >= 2.12 && < 3,
+    quickcheck-instances       >= 0.3  && < 0.4,
+    
     test-framework             >= 0.8  && < 0.9,
     test-framework-quickcheck2 >= 0.3  && < 0.4
 
