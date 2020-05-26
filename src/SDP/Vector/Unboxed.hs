@@ -1,11 +1,11 @@
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, MagicHash #-}
 
 {- |
     Module      :  SDP.Vector.Unboxed
     Copyright   :  (c) Andrey Mulik 2019
     License     :  BSD-style
     Maintainer  :  work.a.mulik@gmail.com
-    Portability :  non-portable (GHC extensions)
+    Portability :  non-portable (requires non-portable modules)
     
     @SDP.Vector.Unboxed@ provides 'Vector' - immutable strict unboxed vector.
     
@@ -32,8 +32,6 @@ where
 import Prelude ()
 import SDP.SafePrelude
 
-import Control.Monad.ST ( runST, ST )
-
 import Data.Vector.Unboxed ( Vector, Unbox )
 import qualified Data.Vector.Unboxed as V
 
@@ -45,13 +43,13 @@ import SDP.Scan
 import SDP.SortM.Tim
 import SDP.Unboxed
 
-import SDP.Bytes.ST
-import SDP.ByteList.ST
-import SDP.ByteList.STUblist
+import SDP.Prim.SBytes
+import SDP.Prim.IBytes
 
-import SDP.Bytes.IO
-import SDP.ByteList.IO
+import SDP.ByteList.STUblist
 import SDP.ByteList.IOUblist
+
+import Control.Monad.ST
 
 default ()
 
@@ -59,9 +57,9 @@ default ()
 
 {- Scan and Estimate instances. -}
 
-instance (Unbox e, Unboxed e) => Scan (Vector e) e
+instance (Unbox e) => Scan (Vector e) e
 
-instance (Unbox e, Unboxed e) => Estimate (Vector e)
+instance (Unbox e) => Estimate (Vector e)
   where
     xs <.=>  n = sizeOf xs <=> n
     xs <==> ys = sizeOf xs <=> sizeOf ys
@@ -129,7 +127,7 @@ instance (Unbox e) => Split (Vector e) e
     prefix p = V.foldr (\ e c -> p e ? c + 1 $ 0) 0
     suffix p = V.foldl (\ c e -> p e ? c + 1 $ 0) 0
 
-instance (Unbox e) => Bordered (Vector e) Int e
+instance (Unbox e) => Bordered (Vector e) Int
   where
     lower   _ = 0
     upper  es = sizeOf es - 1
@@ -181,25 +179,22 @@ instance (Unboxed e, Unbox e) => Sort (Vector e) e
 
 {- Thaw and Freeze instances. -}
 
-instance (Unboxed e, Unbox e) => Thaw (ST s) (Vector e) (STBytes    s Int e) where thaw = fromIndexed'
-instance (Unboxed e, Unbox e) => Thaw (ST s) (Vector e) (STUblist   s     e) where thaw = fromIndexed'
-instance (Unboxed e, Unbox e) => Thaw (ST s) (Vector e) (STByteList s Int e) where thaw = fromIndexed'
+instance (Unboxed e, Unbox e) => Thaw (ST s) (Vector e) (STBytes# s e) where thaw = fromIndexed'
+instance (Unboxed e, Unbox e) => Thaw (ST s) (Vector e) (STUblist s e) where thaw = fromIndexed'
 
-instance (Unboxed e, Unbox e) => Thaw IO (Vector e) (IOBytes    Int e) where thaw = fromIndexed'
-instance (Unboxed e, Unbox e) => Thaw IO (Vector e) (IOUblist       e) where thaw = fromIndexed'
-instance (Unboxed e, Unbox e) => Thaw IO (Vector e) (IOByteList Int e) where thaw = fromIndexed'
+instance (Unboxed e, Unbox e) => Thaw IO (Vector e) (IOBytes# e) where thaw = fromIndexed'
+instance (Unboxed e, Unbox e) => Thaw IO (Vector e) (IOUblist e) where thaw = fromIndexed'
 
-instance (Unboxed e, Unbox e) => Freeze (ST s) (STBytes    s Int e) (Vector e) where freeze = fmap fromList . getLeft
-instance (Unboxed e, Unbox e) => Freeze (ST s) (STUblist   s     e) (Vector e) where freeze = fmap fromList . getLeft
-instance (Unboxed e, Unbox e) => Freeze (ST s) (STByteList s Int e) (Vector e) where freeze = fmap fromList . getLeft
+instance (Unboxed e, Unbox e) => Freeze (ST s) (STBytes# s e) (Vector e) where freeze = fmap fromList . getLeft
+instance (Unboxed e, Unbox e) => Freeze (ST s) (STUblist s e) (Vector e) where freeze = fmap fromList . getLeft
 
-instance (Unboxed e, Unbox e) => Freeze IO (IOBytes    Int e) (Vector e) where freeze = fmap fromList . getLeft
-instance (Unboxed e, Unbox e) => Freeze IO (IOUblist       e) (Vector e) where freeze = fmap fromList . getLeft
-instance (Unboxed e, Unbox e) => Freeze IO (IOByteList Int e) (Vector e) where freeze = fmap fromList . getLeft
+instance (Unboxed e, Unbox e) => Freeze IO (IOBytes# e) (Vector e) where freeze = fmap fromList . getLeft
+instance (Unboxed e, Unbox e) => Freeze IO (IOUblist e) (Vector e) where freeze = fmap fromList . getLeft
 
 --------------------------------------------------------------------------------
 
-done :: (Unboxed e, Unbox e) => STBytes s Int e -> ST s (Vector e)
+done :: (Unboxed e, Unbox e) => STBytes# s e -> ST s (Vector e)
 done =  freeze
+
 
 

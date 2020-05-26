@@ -1,11 +1,11 @@
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, MagicHash #-}
 
 {- |
     Module      :  SDP.Vector
     Copyright   :  (c) Andrey Mulik 2019
     License     :  BSD-style
     Maintainer  :  work.a.mulik@gmail.com
-    Portability :  non-portable (GHC extensions)
+    Portability :  non-portable (requires non-portable modules)
     
     @SDP.Vector@ provides 'Vector' - immutable lazy boxed vector.
 -}
@@ -13,7 +13,8 @@ module SDP.Vector
 (
   -- * Exports
   module SDP.Indexed,
-  -- module SDP.Sort,
+  module SDP.Sort,
+  module SDP.Scan,
   
   -- * Vector
   Vector
@@ -23,8 +24,6 @@ where
 import Prelude ()
 import SDP.SafePrelude
 
-import Control.Monad.ST ( runST, ST )
-
 import SDP.IndexedM
 import SDP.Indexed
 import SDP.Sort
@@ -33,15 +32,15 @@ import SDP.Scan
 import Data.Vector ( Vector )
 import qualified Data.Vector as V
 
-import SDP.Array.ST
-import SDP.Unrolled.ST
-import SDP.Unrolled.STUnlist
+import SDP.Prim.SArray
+import SDP.Prim.IArray
 
-import SDP.Array.IO
-import SDP.Unrolled.IO
+import SDP.Unrolled.STUnlist
 import SDP.Unrolled.IOUnlist
 
 import SDP.SortM.Tim
+
+import Control.Monad.ST
 
 default ()
 
@@ -124,7 +123,7 @@ instance Split (Vector e) e
     spanl  = V.span
     breakl = V.break
 
-instance Bordered (Vector e) Int e
+instance Bordered (Vector e) Int
   where
     lower   _ = 0
     upper  es = sizeOf es - 1
@@ -176,25 +175,21 @@ instance Sort (Vector e) e
 
 {- Thaw and Freeze instances. -}
 
-instance Thaw (ST s) (Vector e) (STArray    s Int e) where thaw = fromFoldableM
-instance Thaw (ST s) (Vector e) (STUnlist   s     e) where thaw = fromFoldableM
-instance Thaw (ST s) (Vector e) (STUnrolled s Int e) where thaw = fromFoldableM
+instance Thaw (ST s) (Vector e) (STArray# s e) where thaw = fromFoldableM
+instance Thaw (ST s) (Vector e) (STUnlist s e) where thaw = fromFoldableM
 
-instance Thaw IO (Vector e) (IOArray    Int e) where thaw = fromFoldableM
-instance Thaw IO (Vector e) (IOUnlist       e) where thaw = fromFoldableM
-instance Thaw IO (Vector e) (IOUnrolled Int e) where thaw = fromFoldableM
+instance Thaw IO (Vector e) (IOArray# e) where thaw = fromFoldableM
+instance Thaw IO (Vector e) (IOUnlist e) where thaw = fromFoldableM
 
-instance Freeze (ST s) (STArray    s Int e) (Vector e) where freeze = fmap fromList . getLeft
-instance Freeze (ST s) (STUnlist   s     e) (Vector e) where freeze = fmap fromList . getLeft
-instance Freeze (ST s) (STUnrolled s Int e) (Vector e) where freeze = fmap fromList . getLeft
+instance Freeze (ST s) (STArray# s e) (Vector e) where freeze = fmap fromList . getLeft
+instance Freeze (ST s) (STUnlist s e) (Vector e) where freeze = fmap fromList . getLeft
 
-instance Freeze IO (IOArray    Int e) (Vector e) where freeze = fmap fromList . getLeft
-instance Freeze IO (IOUnlist       e) (Vector e) where freeze = fmap fromList . getLeft
-instance Freeze IO (IOUnrolled Int e) (Vector e) where freeze = fmap fromList . getLeft
+instance Freeze IO (IOArray# e) (Vector e) where freeze = fmap fromList . getLeft
+instance Freeze IO (IOUnlist e) (Vector e) where freeze = fmap fromList . getLeft
 
 --------------------------------------------------------------------------------
 
-done :: STArray s Int e -> ST s (Vector e)
+done :: STArray# s e -> ST s (Vector e)
 done =  freeze
 
 
