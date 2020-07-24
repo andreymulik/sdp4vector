@@ -31,14 +31,13 @@ where
 
 import Prelude ()
 import SDP.SafePrelude
-
-import Data.Vector.Unboxed ( Vector, Unbox )
-import qualified Data.Vector.Unboxed as V
-
 import SDP.IndexedM
 import SDP.Indexed
 import SDP.Sort
 import SDP.Scan
+
+import Data.Vector.Unboxed ( Vector, Unbox )
+import qualified Data.Vector.Unboxed as V
 
 import SDP.SortM.Tim
 import SDP.Unboxed
@@ -55,7 +54,12 @@ default ()
 
 --------------------------------------------------------------------------------
 
-{- Scan and Estimate instances. -}
+{- Nullable, Scan and Estimate instances. -}
+
+instance (Unbox e) => Nullable (Vector e)
+  where
+    isNull = V.null
+    lzero  = V.empty
 
 instance (Unbox e) => Scan (Vector e) e
 
@@ -87,10 +91,8 @@ instance (Unbox e) => Linear (Vector e) e
     single = V.singleton
     toHead = V.cons
     toLast = V.snoc
-    isNull = V.null
     
     listL = V.toList
-    lzero = V.empty
     
     head = V.head
     tail = V.tail
@@ -195,6 +197,4 @@ instance (Unboxed e, Unbox e) => Freeze IO (IOUblist e) (Vector e) where freeze 
 
 done :: (Unboxed e, Unbox e) => STBytes# s e -> ST s (Vector e)
 done =  freeze
-
-
 

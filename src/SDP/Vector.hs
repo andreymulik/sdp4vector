@@ -23,7 +23,6 @@ where
 
 import Prelude ()
 import SDP.SafePrelude
-
 import SDP.IndexedM
 import SDP.Indexed
 import SDP.Sort
@@ -46,7 +45,12 @@ default ()
 
 --------------------------------------------------------------------------------
 
-{- Zip, Scan and Estimate instances. -}
+{- Nullable, Zip, Scan and Estimate instances. -}
+
+instance Nullable (Vector e)
+  where
+    isNull = V.null
+    lzero  = V.empty
 
 instance Zip Vector
   where
@@ -86,17 +90,14 @@ instance Linear (Vector e) e
     single = V.singleton
     toHead = V.cons
     toLast = V.snoc
-    isNull = V.null
     
     listL = V.toList
-    lzero = V.empty
-    
-    head = V.head
-    tail = V.tail
-    init = V.init
-    last = V.last
-    nub  = V.uniq
-    (++) = (V.++)
+    head  = V.head
+    tail  = V.tail
+    init  = V.init
+    last  = V.last
+    (++)  = (V.++)
+    nub   = V.uniq
     
     partitions ps = fmap fromList . partitions ps . toList
     concatMap   f = V.concatMap f . fromFoldable
@@ -191,5 +192,4 @@ instance Freeze IO (IOUnlist e) (Vector e) where freeze = fmap fromList . getLef
 
 done :: STArray# s e -> ST s (Vector e)
 done =  freeze
-
 
