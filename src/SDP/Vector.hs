@@ -96,8 +96,10 @@ instance Linear (Vector e) e
     tail  = V.tail
     init  = V.init
     last  = V.last
-    (++)  = (V.++)
     nub   = V.uniq
+    
+    (!^) = V.unsafeIndex
+    (++) = (V.++)
     
     partitions ps = fmap fromList . partitions ps . toList
     concatMap   f = V.concatMap f . fromFoldable
@@ -146,10 +148,8 @@ instance Indexed (Vector e) Int e
         es   = replicate (size bnds) undefined
         bnds = bounds es'
     
-    (!^) = V.unsafeIndex
     (.!) = V.unsafeIndex
     (!?) = (V.!?)
-    (!)  = (V.!)
     
     Z  // ascs = null ascs ? Z $ assoc (l, u) ascs
       where

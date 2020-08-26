@@ -93,12 +93,13 @@ instance (Unbox e) => Linear (Vector e) e
     toLast = V.snoc
     
     listL = V.toList
+    head  = V.head
+    tail  = V.tail
+    init  = V.init
+    last  = V.last
+    nub   = V.uniq
     
-    head = V.head
-    tail = V.tail
-    init = V.init
-    last = V.last
-    nub  = V.uniq
+    (!^) = V.unsafeIndex
     (++) = (V.++)
     
     partitions ps = fmap fromList . partitions ps . listL
@@ -151,10 +152,8 @@ instance (Unboxed e, Unbox e) => Indexed (Vector e) Int e
       where
         ies = [ (offsetOf es i, e) | (i, e) <- assocs es, indexIn es i ]
     
-    (!^) = V.unsafeIndex
     (.!) = V.unsafeIndex
     (!?) = (V.!?)
-    (!)  = (V.!)
     
     Z  // ascs = null ascs ? Z $ assoc (l, u) ascs
       where
@@ -168,7 +167,7 @@ instance (Unboxed e, Unbox e) => Indexed (Vector e) Int e
 instance (Unboxed e, Unbox e) => IFold (Vector e) Int e
   where
     ifoldr = V.ifoldr
-    ifoldl = \ f -> V.ifoldl (flip f)
+    ifoldl = V.ifoldl . flip
     
     i_foldl = V.foldl
     i_foldr = V.foldr
