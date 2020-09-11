@@ -5,7 +5,7 @@
     Copyright   :  (c) Andrey Mulik 2019
     License     :  BSD-style
     Maintainer  :  work.a.mulik@gmail.com
-    Portability :  non-portable (requires non-portable modules)
+    Portability :  portable
     
     @SDP.Vector.Unboxed@ provides 'Vector' - immutable strict unboxed vector.
     
@@ -33,20 +33,20 @@ import Prelude ()
 import SDP.SafePrelude
 import SDP.IndexedM
 import SDP.Indexed
+import SDP.Unboxed
 import SDP.Sort
 import SDP.Scan
+
+import SDP.ByteList.STUblist
+import SDP.ByteList.IOUblist
+
+import SDP.Prim.SBytes
+import SDP.SortM.Tim
 
 import Data.Vector.Unboxed ( Vector, Unbox )
 import qualified Data.Vector.Unboxed as V
 
-import SDP.SortM.Tim
-import SDP.Unboxed
-
-import SDP.Prim.SBytes
-import SDP.Prim.IBytes
-
-import SDP.ByteList.STUblist
-import SDP.ByteList.IOUblist
+import Data.Function
 
 import Control.Monad.ST
 
@@ -65,22 +65,17 @@ instance (Unbox e) => Scan (Vector e) e
 
 instance (Unbox e) => Estimate (Vector e)
   where
-    xs <.=>  n = sizeOf xs <=> n
-    xs <==> ys = sizeOf xs <=> sizeOf ys
+    (<==>) = on (<=>) sizeOf
+    (.>.)  = on  (>)  sizeOf
+    (.<.)  = on  (<)  sizeOf
+    (.<=.) = on  (<=) sizeOf
+    (.>=.) = on  (>=) sizeOf
     
-    xs .<  n = sizeOf xs <  n
-    xs .>  n = sizeOf xs >  n
-    xs .<= n = sizeOf xs <= n
-    xs .>= n = sizeOf xs >= n
-    xs .== n = sizeOf xs == n
-    xs ./= n = sizeOf xs /= n
-    
-    xs .<.  ys = sizeOf xs < sizeOf ys
-    xs .>.  ys = sizeOf xs > sizeOf ys
-    xs .<=. ys = sizeOf xs <= sizeOf ys
-    xs .>=. ys = sizeOf xs >= sizeOf ys
-    xs .==. ys = sizeOf xs == sizeOf ys
-    xs ./=. ys = sizeOf xs /= sizeOf ys
+    (<.=>) = (<=>) . sizeOf
+    (.>)   = (>)   . sizeOf
+    (.<)   = (<)   . sizeOf
+    (.>=)  = (>=)  . sizeOf
+    (.<=)  = (<=)  . sizeOf
 
 --------------------------------------------------------------------------------
 
@@ -102,8 +97,10 @@ instance (Unbox e) => Linear (Vector e) e
     (!^) = V.unsafeIndex
     (++) = (V.++)
     
+    write es = (es V.//) . single ... (,)
+    
     partitions ps = fmap fromList . partitions ps . listL
-    concatMap   f = concat . foldr (\ x y -> f x : y) []
+    concatMap   f = concat . foldr ((:) . f) []
     
     fromListN = V.fromListN
     replicate = V.replicate
@@ -140,7 +137,28 @@ instance (Unbox e) => Bordered (Vector e) Int
 
 --------------------------------------------------------------------------------
 
-{- Indexed, IFold and Sort instances. -}
+{- Map, Indexed, IFold and Sort instances. -}
+
+instance (Unboxed e, Unbox e) => Map (Vector e) Int e
+  where
+    toMap ascs = isNull ascs ? Z $ assoc (l, u) ascs
+      where
+        l = fst $ minimumBy cmpfst ascs
+        u = fst $ maximumBy cmpfst ascs
+    
+    toMap' defvalue ascs = isNull ascs ? Z $ assoc' (l, u) defvalue ascs
+      where
+        l = fst $ minimumBy cmpfst ascs
+        u = fst $ maximumBy cmpfst ascs
+    
+    (.!) = V.unsafeIndex
+    (!?) = (V.!?)
+    
+    Z  // ascs = toMap ascs
+    vs // ascs = vs V.// ascs
+    
+    (.$) = V.findIndex
+    (*$) = listL ... V.findIndices
 
 instance (Unboxed e, Unbox e) => Indexed (Vector e) Int e
   where
@@ -148,21 +166,8 @@ instance (Unboxed e, Unbox e) => Indexed (Vector e) Int e
     
     assoc' bnds defvalue ascs = runST $ fromAssocs' bnds defvalue ascs >>= done
     
-    fromIndexed es = defaultBounds (sizeOf es) `assoc` ies
-      where
-        ies = [ (offsetOf es i, e) | (i, e) <- assocs es, indexIn es i ]
-    
-    (.!) = V.unsafeIndex
-    (!?) = (V.!?)
-    
-    Z  // ascs = null ascs ? Z $ assoc (l, u) ascs
-      where
-        l = fst $ minimumBy cmpfst ascs
-        u = fst $ maximumBy cmpfst ascs
-    vs // ascs = vs V.// ascs
-    
-    (.$) = V.findIndex
-    (*$) = \ p -> listL . V.findIndices p
+    fromIndexed es = defaultBounds (sizeOf es) `assoc`
+      [ (offsetOf es i, e) | (i, e) <- assocs es, indexIn es i ]
 
 instance (Unboxed e, Unbox e) => IFold (Vector e) Int e
   where
@@ -196,4 +201,5 @@ instance (Unboxed e, Unbox e) => Freeze IO (IOUblist e) (Vector e) where freeze 
 
 done :: (Unboxed e, Unbox e) => STBytes# s e -> ST s (Vector e)
 done =  freeze
+
 

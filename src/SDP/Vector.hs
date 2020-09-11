@@ -5,7 +5,7 @@
     Copyright   :  (c) Andrey Mulik 2019
     License     :  BSD-style
     Maintainer  :  work.a.mulik@gmail.com
-    Portability :  non-portable (requires non-portable modules)
+    Portability :  portable
     
     @SDP.Vector@ provides 'Vector' - immutable lazy boxed vector.
 -}
@@ -31,11 +31,11 @@ import SDP.Scan
 import Data.Vector ( Vector )
 import qualified Data.Vector as V
 
-import SDP.Prim.SArray
-import SDP.Prim.IArray
+import Data.Function
 
 import SDP.Unrolled.STUnlist
 import SDP.Unrolled.IOUnlist
+import SDP.Prim.SArray
 
 import SDP.SortM.Tim
 
@@ -64,22 +64,17 @@ instance Scan (Vector e) e
 
 instance Estimate (Vector e)
   where
-    xs <.=>  n = sizeOf xs <=> n
-    xs <==> ys = sizeOf xs <=> sizeOf ys
+    (<==>) = on (<=>) sizeOf
+    (.>.)  = on  (>)  sizeOf
+    (.<.)  = on  (<)  sizeOf
+    (.<=.) = on  (<=) sizeOf
+    (.>=.) = on  (>=) sizeOf
     
-    xs .<  n = sizeOf xs <  n
-    xs .>  n = sizeOf xs >  n
-    xs .<= n = sizeOf xs <= n
-    xs .>= n = sizeOf xs >= n
-    xs .== n = sizeOf xs == n
-    xs ./= n = sizeOf xs /= n
-    
-    xs .<.  ys = sizeOf xs < sizeOf ys
-    xs .>.  ys = sizeOf xs > sizeOf ys
-    xs .<=. ys = sizeOf xs <= sizeOf ys
-    xs .>=. ys = sizeOf xs >= sizeOf ys
-    xs .==. ys = sizeOf xs == sizeOf ys
-    xs ./=. ys = sizeOf xs /= sizeOf ys
+    (<.=>) = (<=>) . sizeOf
+    (.>)   = (>)   . sizeOf
+    (.<)   = (<)   . sizeOf
+    (.>=)  = (>=)  . sizeOf
+    (.<=)  = (<=)  . sizeOf
 
 --------------------------------------------------------------------------------
 
@@ -101,6 +96,8 @@ instance Linear (Vector e) e
     (!^) = V.unsafeIndex
     (++) = (V.++)
     
+    write es = (es //) . single ... (,)
+    
     partitions ps = fmap fromList . partitions ps . toList
     concatMap   f = V.concatMap f . fromFoldable
     
@@ -115,9 +112,8 @@ instance Linear (Vector e) e
 
 instance Split (Vector e) e
   where
-    take = V.take
-    drop = V.drop
-    
+    take  = V.take
+    drop  = V.drop
     split = V.splitAt
     
     takeWhile = V.takeWhile
@@ -136,7 +132,28 @@ instance Bordered (Vector e) Int
 
 --------------------------------------------------------------------------------
 
-{- Indexed, IFold and Sort instances. -}
+{- Map, Indexed, IFold and Sort instances. -}
+
+instance Map (Vector e) Int e
+  where
+    toMap ascs = isNull ascs ? Z $ assoc (l, u) ascs
+      where
+        l = fst $ minimumBy cmpfst ascs
+        u = fst $ maximumBy cmpfst ascs
+    
+    toMap' defvalue ascs = isNull ascs ? Z $ assoc' (l, u) defvalue ascs
+      where
+        l = fst $ minimumBy cmpfst ascs
+        u = fst $ maximumBy cmpfst ascs
+    
+    (.!) = V.unsafeIndex
+    (!?) = (V.!?)
+    
+    Z  // ascs = toMap ascs
+    vs // ascs = vs V.// ascs
+    
+    (.$) = V.findIndex
+    (*$) = toList ... V.findIndices
 
 instance Indexed (Vector e) Int e
   where
@@ -147,18 +164,6 @@ instance Indexed (Vector e) Int e
         ies  = [ (offset bnds i, e) | (i, e) <- assocs es', inRange bnds i ]
         es   = replicate (size bnds) undefined
         bnds = bounds es'
-    
-    (.!) = V.unsafeIndex
-    (!?) = (V.!?)
-    
-    Z  // ascs = null ascs ? Z $ assoc (l, u) ascs
-      where
-        l = fst $ minimumBy cmpfst ascs
-        u = fst $ maximumBy cmpfst ascs
-    vs // ascs = vs V.// ascs
-    
-    (.$) = V.findIndex
-    (*$) = \ p -> toList . V.findIndices p
 
 instance IFold (Vector e) Int e
   where
