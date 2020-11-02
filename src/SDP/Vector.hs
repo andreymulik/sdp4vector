@@ -28,10 +28,9 @@ import SDP.Indexed
 import SDP.Sort
 import SDP.Scan
 
-import Data.Vector ( Vector )
 import qualified Data.Vector as V
-
 import Data.Function
+import Data.Vector ( Vector )
 
 import SDP.Unrolled.STUnlist
 import SDP.Unrolled.IOUnlist
@@ -109,6 +108,12 @@ instance Linear (Vector e) e
     
     concat = V.concat . toList
     filter = V.filter
+    
+    ofoldl = V.ifoldl . flip
+    ofoldr = V.ifoldr
+    
+    o_foldl = foldl
+    o_foldr = foldr
 
 instance Split (Vector e) e
   where
@@ -132,7 +137,7 @@ instance Bordered (Vector e) Int
 
 --------------------------------------------------------------------------------
 
-{- Map, Indexed, KFold and Sort instances. -}
+{- Map, Indexed and Sort instances. -}
 
 instance Map (Vector e) Int e
   where
@@ -154,6 +159,9 @@ instance Map (Vector e) Int e
     
     (.$) = V.findIndex
     (*$) = toList ... V.findIndices
+    
+    kfoldl = ofoldl
+    kfoldr = ofoldr
 
 instance Indexed (Vector e) Int e
   where
@@ -164,14 +172,6 @@ instance Indexed (Vector e) Int e
         ies  = [ (offset bnds i, e) | (i, e) <- assocs es', inRange bnds i ]
         es   = replicate (size bnds) undefined
         bnds = bounds es'
-
-instance KFold (Vector e) Int e
-  where
-    kfoldr = V.ifoldr
-    kfoldl = V.ifoldl . flip
-    
-    k_foldl = foldl
-    k_foldr = foldr
 
 instance Sort (Vector e) e
   where

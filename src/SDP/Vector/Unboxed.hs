@@ -110,6 +110,12 @@ instance (Unbox e) => Linear (Vector e) e
     
     concat = V.concat . toList
     filter = V.filter
+    
+    ofoldl = V.ifoldl . flip
+    ofoldr = V.ifoldr
+    
+    o_foldl = V.foldl
+    o_foldr = V.foldr
 
 instance (Unbox e) => Split (Vector e) e
   where
@@ -159,6 +165,9 @@ instance (Unboxed e, Unbox e) => Map (Vector e) Int e
     
     (.$) = V.findIndex
     (*$) = listL ... V.findIndices
+    
+    kfoldl = ofoldl
+    kfoldr = ofoldr
 
 instance (Unboxed e, Unbox e) => Indexed (Vector e) Int e
   where
@@ -168,14 +177,6 @@ instance (Unboxed e, Unbox e) => Indexed (Vector e) Int e
     
     fromIndexed es = defaultBounds (sizeOf es) `assoc`
       [ (offsetOf es i, e) | (i, e) <- assocs es, indexIn es i ]
-
-instance (Unboxed e, Unbox e) => KFold (Vector e) Int e
-  where
-    kfoldr = V.ifoldr
-    kfoldl = V.ifoldl . flip
-    
-    k_foldl = V.foldl
-    k_foldr = V.foldr
 
 instance (Unboxed e, Unbox e) => Sort (Vector e) e
   where
@@ -201,5 +202,4 @@ instance (Unboxed e, Unbox e) => Freeze IO (IOUblist e) (Vector e) where freeze 
 
 done :: (Unboxed e, Unbox e) => STBytes# s e -> ST s (Vector e)
 done =  freeze
-
 
