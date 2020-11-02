@@ -169,13 +169,13 @@ instance (Unboxed e, Unbox e) => Indexed (Vector e) Int e
     fromIndexed es = defaultBounds (sizeOf es) `assoc`
       [ (offsetOf es i, e) | (i, e) <- assocs es, indexIn es i ]
 
-instance (Unboxed e, Unbox e) => IFold (Vector e) Int e
+instance (Unboxed e, Unbox e) => KFold (Vector e) Int e
   where
-    ifoldr = V.ifoldr
-    ifoldl = V.ifoldl . flip
+    kfoldr = V.ifoldr
+    kfoldl = V.ifoldl . flip
     
-    i_foldl = V.foldl
-    i_foldr = V.foldr
+    k_foldl = V.foldl
+    k_foldr = V.foldr
 
 instance (Unboxed e, Unbox e) => Sort (Vector e) e
   where

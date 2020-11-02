@@ -132,7 +132,7 @@ instance Bordered (Vector e) Int
 
 --------------------------------------------------------------------------------
 
-{- Map, Indexed, IFold and Sort instances. -}
+{- Map, Indexed, KFold and Sort instances. -}
 
 instance Map (Vector e) Int e
   where
@@ -165,13 +165,13 @@ instance Indexed (Vector e) Int e
         es   = replicate (size bnds) undefined
         bnds = bounds es'
 
-instance IFold (Vector e) Int e
+instance KFold (Vector e) Int e
   where
-    ifoldr = V.ifoldr
-    ifoldl = \ f -> V.ifoldl (flip f)
+    kfoldr = V.ifoldr
+    kfoldl = V.ifoldl . flip
     
-    i_foldl = foldl
-    i_foldr = foldr
+    k_foldl = foldl
+    k_foldr = foldr
 
 instance Sort (Vector e) e
   where
