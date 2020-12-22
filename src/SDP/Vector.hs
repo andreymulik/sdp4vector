@@ -28,8 +28,12 @@ import SDP.Indexed
 import SDP.Sort
 import SDP.Scan
 
-import qualified Data.Vector as V
 import Data.Function
+
+import qualified Data.Vector.Fusion.Bundle as B
+import qualified Data.Vector as V
+
+import Data.Vector.Generic ( stream )
 import Data.Vector ( Vector )
 
 import SDP.Unrolled.STUnlist
@@ -53,6 +57,35 @@ instance Nullable (Vector e)
 
 instance Zip Vector
   where
+    all6 f as bs cs ds es fs = B.and $ B.zipWith6 f
+      (stream as) (stream bs) (stream cs) (stream ds) (stream es) (stream fs)
+    
+    all5 f as bs cs ds es = B.and $ B.zipWith5 f
+      (stream as) (stream bs) (stream cs) (stream ds) (stream es)
+    
+    all4 f as bs cs ds = B.and $ B.zipWith4 f
+      (stream as) (stream bs) (stream cs) (stream ds)
+    
+    all3 f as bs cs = B.and $ B.zipWith3 f
+      (stream as) (stream bs) (stream cs)
+    
+    all2 f as bs = B.and $ B.zipWith f
+      (stream as) (stream bs)
+    
+    any6 f as bs cs ds es fs = B.or $ B.zipWith6 f
+      (stream as) (stream bs) (stream cs) (stream ds) (stream es) (stream fs)
+    
+    any5 f as bs cs ds es = B.or $ B.zipWith5 f
+      (stream as) (stream bs) (stream cs) (stream ds) (stream es)
+    
+    any4 f as bs cs ds = B.or $ B.zipWith4 f
+      (stream as) (stream bs) (stream cs) (stream ds)
+    
+    any3 f as bs cs = B.or $ B.zipWith3 f
+      (stream as) (stream bs) (stream cs)
+    
+    any2 f as bs = B.or $ B.zipWith f (stream as) (stream bs)
+    
     zipWith  = V.zipWith
     zipWith3 = V.zipWith3
     zipWith4 = V.zipWith4
@@ -197,4 +230,6 @@ instance Freeze IO (IOUnlist e) (Vector e) where freeze = fmap fromList . getLef
 
 done :: STArray# s e -> ST s (Vector e)
 done =  freeze
+
+
 
