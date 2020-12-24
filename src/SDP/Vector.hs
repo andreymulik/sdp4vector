@@ -28,8 +28,6 @@ import SDP.Indexed
 import SDP.Sort
 import SDP.Scan
 
-import Data.Function
-
 import qualified Data.Vector.Fusion.Bundle as B
 import qualified Data.Vector as V
 
@@ -184,14 +182,13 @@ instance Map (Vector e) Int e
         l = fst $ minimumBy cmpfst ascs
         u = fst $ maximumBy cmpfst ascs
     
-    (.!) = V.unsafeIndex
-    (!?) = (V.!?)
-    
     Z  // ascs = toMap ascs
     vs // ascs = vs V.// ascs
     
-    (.$) = V.findIndex
     (*$) = toList ... V.findIndices
+    (.!) = V.unsafeIndex
+    (.$) = V.findIndex
+    (!?) = (V.!?)
     
     kfoldl = ofoldl
     kfoldr = ofoldr
@@ -230,6 +227,4 @@ instance Freeze IO (IOUnlist e) (Vector e) where freeze = fmap fromList . getLef
 
 done :: STArray# s e -> ST s (Vector e)
 done =  freeze
-
-
 

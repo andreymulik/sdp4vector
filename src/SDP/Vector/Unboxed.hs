@@ -46,8 +46,6 @@ import SDP.SortM.Tim
 import Data.Vector.Unboxed ( Vector, Unbox )
 import qualified Data.Vector.Unboxed as V
 
-import Data.Function
-
 import Control.Monad.ST
 
 default ()
@@ -68,8 +66,8 @@ instance (Unbox e) => Estimate (Vector e)
     (<==>) = on (<=>) sizeOf
     (.>.)  = on  (>)  sizeOf
     (.<.)  = on  (<)  sizeOf
-    (.<=.) = on  (<=) sizeOf
-    (.>=.) = on  (>=) sizeOf
+    (.<=.) = on (<=)  sizeOf
+    (.>=.) = on (>=)  sizeOf
     
     (<.=>) = (<=>) . sizeOf
     (.>)   = (>)   . sizeOf
@@ -111,9 +109,8 @@ instance (Unbox e) => Linear (Vector e) e
     concat = V.concat . toList
     filter = V.filter
     
-    ofoldl = V.ifoldl . flip
-    ofoldr = V.ifoldr
-    
+    ofoldl  = V.ifoldl . flip
+    ofoldr  = V.ifoldr
     o_foldl = V.foldl
     o_foldr = V.foldr
 
@@ -147,15 +144,9 @@ instance (Unbox e) => Bordered (Vector e) Int
 
 instance (Unboxed e, Unbox e) => Map (Vector e) Int e
   where
-    toMap ascs = isNull ascs ? Z $ assoc (l, u) ascs
-      where
-        l = fst $ minimumBy cmpfst ascs
-        u = fst $ maximumBy cmpfst ascs
+    toMap ascs = isNull ascs ? Z $ ascsBounds ascs `assoc` ascs
     
-    toMap' defvalue ascs = isNull ascs ? Z $ assoc' (l, u) defvalue ascs
-      where
-        l = fst $ minimumBy cmpfst ascs
-        u = fst $ maximumBy cmpfst ascs
+    toMap' e ascs = isNull ascs ? Z $ assoc' (ascsBounds ascs) e ascs
     
     (.!) = V.unsafeIndex
     (!?) = (V.!?)
@@ -173,7 +164,7 @@ instance (Unboxed e, Unbox e) => Indexed (Vector e) Int e
   where
     assoc bnds ascs = runST $ fromAssocs bnds ascs >>= done
     
-    assoc' bnds defvalue ascs = runST $ fromAssocs' bnds defvalue ascs >>= done
+    assoc' bnds e ascs = runST $ fromAssocs' bnds e ascs >>= done
     
     fromIndexed es = defaultBounds (sizeOf es) `assoc`
       [ (offsetOf es i, e) | (i, e) <- assocs es, indexIn es i ]
@@ -200,6 +191,10 @@ instance (Unboxed e, Unbox e) => Freeze IO (IOUblist e) (Vector e) where freeze 
 
 --------------------------------------------------------------------------------
 
+ascsBounds :: (Ord a) => [(a, b)] -> (a, a)
+ascsBounds =  \ ((x, _) : xs) -> foldr (\ (e, _) (mn, mx) -> (min mn e, max mx e)) (x, x) xs
+
 done :: (Unboxed e, Unbox e) => STBytes# s e -> ST s (Vector e)
 done =  freeze
+
 
