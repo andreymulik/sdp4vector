@@ -85,8 +85,8 @@ concatProp               =  concatTest
 
 {- Split property. -}
 
-splitProp :: TestSplit (Vector Int)
-splitProp =  splitTest
+splitProp :: Int -> TestSplit (Vector Int)
+splitProp =  splitTest . (>)
 
 --------------------------------------------------------------------------------
 
