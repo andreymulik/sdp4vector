@@ -46,8 +46,6 @@ import SDP.SortM.Tim
 import Data.Vector.Unboxed ( Vector, Unbox )
 import qualified Data.Vector.Unboxed as V
 
-import Control.Monad.ST
-
 default ()
 
 --------------------------------------------------------------------------------
@@ -180,14 +178,14 @@ instance (Unboxed e, Unbox e) => Sort (Vector e) e
 instance (Unboxed e, Unbox e) => Thaw (ST s) (Vector e) (STBytes# s e) where thaw = fromIndexed'
 instance (Unboxed e, Unbox e) => Thaw (ST s) (Vector e) (STUblist s e) where thaw = fromIndexed'
 
-instance (Unboxed e, Unbox e) => Thaw IO (Vector e) (IOBytes# e) where thaw = fromIndexed'
-instance (Unboxed e, Unbox e) => Thaw IO (Vector e) (IOUblist e) where thaw = fromIndexed'
+instance (MonadIO io, Unboxed e, Unbox e) => Thaw io (Vector e) (MIOBytes# io e) where thaw = fromIndexed'
+instance (MonadIO io, Unboxed e, Unbox e) => Thaw io (Vector e) (MIOUblist io e) where thaw = fromIndexed'
 
 instance (Unboxed e, Unbox e) => Freeze (ST s) (STBytes# s e) (Vector e) where freeze = fmap fromList . getLeft
 instance (Unboxed e, Unbox e) => Freeze (ST s) (STUblist s e) (Vector e) where freeze = fmap fromList . getLeft
 
-instance (Unboxed e, Unbox e) => Freeze IO (IOBytes# e) (Vector e) where freeze = fmap fromList . getLeft
-instance (Unboxed e, Unbox e) => Freeze IO (IOUblist e) (Vector e) where freeze = fmap fromList . getLeft
+instance (MonadIO io, Unboxed e, Unbox e) => Freeze io (MIOBytes# io e) (Vector e) where freeze = fmap fromList . getLeft
+instance (MonadIO io, Unboxed e, Unbox e) => Freeze io (MIOUblist io e) (Vector e) where freeze = fmap fromList . getLeft
 
 --------------------------------------------------------------------------------
 
@@ -196,5 +194,7 @@ ascsBounds =  \ ((x, _) : xs) -> foldr (\ (e, _) (mn, mx) -> (min mn e, max mx e
 
 done :: (Unboxed e, Unbox e) => STBytes# s e -> ST s (Vector e)
 done =  freeze
+
+
 
 

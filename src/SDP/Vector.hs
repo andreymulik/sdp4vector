@@ -37,10 +37,7 @@ import Data.Vector ( Vector )
 import SDP.Unrolled.STUnlist
 import SDP.Unrolled.IOUnlist
 import SDP.Prim.SArray
-
 import SDP.SortM.Tim
-
-import Control.Monad.ST
 
 default ()
 
@@ -214,17 +211,20 @@ instance Sort (Vector e) e
 instance Thaw (ST s) (Vector e) (STArray# s e) where thaw = fromFoldableM
 instance Thaw (ST s) (Vector e) (STUnlist s e) where thaw = fromFoldableM
 
-instance Thaw IO (Vector e) (IOArray# e) where thaw = fromFoldableM
-instance Thaw IO (Vector e) (IOUnlist e) where thaw = fromFoldableM
+instance (MonadIO io) => Thaw io (Vector e) (MIOArray# io e) where thaw = fromFoldableM
+instance (MonadIO io) => Thaw io (Vector e) (MIOUnlist io e) where thaw = fromFoldableM
 
 instance Freeze (ST s) (STArray# s e) (Vector e) where freeze = fmap fromList . getLeft
 instance Freeze (ST s) (STUnlist s e) (Vector e) where freeze = fmap fromList . getLeft
 
-instance Freeze IO (IOArray# e) (Vector e) where freeze = fmap fromList . getLeft
-instance Freeze IO (IOUnlist e) (Vector e) where freeze = fmap fromList . getLeft
+instance (MonadIO io) => Freeze io (MIOArray# io e) (Vector e) where freeze = fmap fromList . getLeft
+instance (MonadIO io) => Freeze io (MIOUnlist io e) (Vector e) where freeze = fmap fromList . getLeft
 
 --------------------------------------------------------------------------------
 
 done :: STArray# s e -> ST s (Vector e)
 done =  freeze
+
+
+
 
