@@ -62,16 +62,16 @@ instance (Unbox e) => Scan (Vector e) e
 instance (Unbox e) => Estimate (Vector e)
   where
     (<==>) = on (<=>) sizeOf
+    (.>=.) = on (>=)  sizeOf
+    (.<=.) = on (<=)  sizeOf
     (.>.)  = on  (>)  sizeOf
     (.<.)  = on  (<)  sizeOf
-    (.<=.) = on (<=)  sizeOf
-    (.>=.) = on (>=)  sizeOf
     
     (<.=>) = (<=>) . sizeOf
-    (.>)   = (>)   . sizeOf
-    (.<)   = (<)   . sizeOf
     (.>=)  = (>=)  . sizeOf
     (.<=)  = (<=)  . sizeOf
+    (.>)   = (>)   . sizeOf
+    (.<)   = (<)   . sizeOf
 
 --------------------------------------------------------------------------------
 
@@ -84,6 +84,7 @@ instance (Unbox e) => Linear (Vector e) e
     toLast = V.snoc
     
     listL = V.toList
+    force = V.force
     head  = V.head
     tail  = V.tail
     init  = V.init
@@ -170,6 +171,8 @@ instance (Unboxed e, Unbox e) => Indexed (Vector e) Int e
 instance (Unboxed e, Unbox e) => Sort (Vector e) e
   where
     sortBy cmp es = runST $ do es' <- thaw es; timSortBy cmp es'; done es'
+    
+    sortedBy f = sortedBy f . listL
 
 --------------------------------------------------------------------------------
 
@@ -194,7 +197,4 @@ ascsBounds =  \ ((x, _) : xs) -> foldr (\ (e, _) (mn, mx) -> (min mn e, max mx e
 
 done :: (Unboxed e, Unbox e) => STBytes# s e -> ST s (Vector e)
 done =  freeze
-
-
-
 

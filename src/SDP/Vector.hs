@@ -114,6 +114,7 @@ instance Linear (Vector e) e
     toLast = V.snoc
     
     listL = V.toList
+    force = V.force
     head  = V.head
     tail  = V.tail
     init  = V.init
@@ -203,6 +204,8 @@ instance Indexed (Vector e) Int e
 instance Sort (Vector e) e
   where
     sortBy cmp es = runST $ do es' <- thaw es; timSortBy cmp es'; done es'
+    
+    sortedBy f = sortedBy f . listL
 
 --------------------------------------------------------------------------------
 
@@ -224,7 +227,4 @@ instance (MonadIO io) => Freeze io (MIOUnlist io e) (Vector e) where freeze = fm
 
 done :: STArray# s e -> ST s (Vector e)
 done =  freeze
-
-
-
 
