@@ -2,11 +2,11 @@ name:          sdp4vector
 version:       0.2
 category:      Data Structures
 
-synopsis:      See README.md
-description:   See README.md
+synopsis:      SDP wrapper for Vector
+description:   Implementation of SDP classes for Vector package
 
 author:        Andrey Mulik
-maintainer:    work.a.mulik@gmail.com
+maintainer:    <work.a.mulik@gmail.com>
 bug-reports:   https://github.com/andreymulik/sdp4vector/issues
 
 copyright:     2019 Andrey Mulik
@@ -37,7 +37,7 @@ Library
     sdp          >= 0.2  && < 0.3,
     vector       >= 0.12 && < 0.13
   
-  ghc-options: -O2 -Wall -Wno-orphans
+  ghc-options: -Wall -Wcompat -Wno-orphans
   
   exposed-modules:
     SDP.Vector
@@ -72,7 +72,7 @@ test-suite test-vector-boxed
     test-framework             >= 0.8  && < 0.9,
     test-framework-quickcheck2 >= 0.3  && < 0.4
 
-  ghc-options: -Wall -O2 -Wno-orphans
+  ghc-options: -Wall -Wcompat -Wno-orphans
 
 test-suite test-vector-unboxed
   default-language: Haskell2010
@@ -96,5 +96,5 @@ test-suite test-vector-unboxed
     test-framework             >= 0.8  && < 0.9,
     test-framework-quickcheck2 >= 0.3  && < 0.4
 
-  ghc-options: -Wall -O2 -Wno-orphans
+  ghc-options: -Wall -Wcompat -Wno-orphans
 
