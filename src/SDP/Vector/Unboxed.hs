@@ -1,4 +1,4 @@
-{-# LANGUAGE Trustworthy, MagicHash, MultiParamTypeClasses, FlexibleInstances #-}
+{-# LANGUAGE Trustworthy, CPP, MagicHash, MultiParamTypeClasses, FlexibleInstances #-}
 
 {- |
     Module      :  SDP.Vector.Unboxed
@@ -89,7 +89,9 @@ instance (Unbox e) => Linear (Vector e) e
     tail  = V.tail
     init  = V.init
     last  = V.last
+#if MIN_VERSION_vector(0,12,0)
     nub   = V.uniq
+#endif
     
     (!^) = V.unsafeIndex
     (++) = (V.++)
@@ -197,4 +199,7 @@ ascsBounds =  \ ((x, _) : xs) -> foldr (\ (e, _) (mn, mx) -> (min mn e, max mx e
 
 done :: (Unboxed e, Unbox e) => STBytes# s e -> ST s (Vector e)
 done =  freeze
+
+
+
 

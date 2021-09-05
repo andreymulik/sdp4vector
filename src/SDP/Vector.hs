@@ -1,4 +1,4 @@
-{-# LANGUAGE Trustworthy, MagicHash, MultiParamTypeClasses, FlexibleInstances #-}
+{-# LANGUAGE Trustworthy, CPP, MagicHash, MultiParamTypeClasses, FlexibleInstances #-}
 
 {- |
     Module      :  SDP.Vector
@@ -119,7 +119,9 @@ instance Linear (Vector e) e
     tail  = V.tail
     init  = V.init
     last  = V.last
+#if MIN_VERSION_vector(0,12,0)
     nub   = V.uniq
+#endif
     
     (!^) = V.unsafeIndex
     (++) = (V.++)
@@ -227,4 +229,7 @@ instance (MonadIO io) => Freeze io (MIOUnlist io e) (Vector e) where freeze = fm
 
 done :: STArray# s e -> ST s (Vector e)
 done =  freeze
+
+
+
 

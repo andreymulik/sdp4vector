@@ -5,7 +5,7 @@ import Test.Framework.Providers.QuickCheck2
 
 import SDP.Vector
 
-import Test.QuickCheck.Instances.Vector ()
+import Test.QuickCheck.Instances ()
 import Test.SDP
 
 default ()
