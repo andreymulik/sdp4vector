@@ -131,11 +131,11 @@ instance (Unbox e) => Split (Vector e) e
 
 instance (Unbox e) => Bordered (Vector e) Int
   where
-    lower   _ = 0
-    upper  es = sizeOf es - 1
-    bounds es = (0, sizeOf es - 1)
-    
-    sizeOf = V.length
+    lower    _ = 0
+    sizeOf     = V.length
+    upper   es = sizeOf es - 1
+    bounds  es = (0, sizeOf es - 1)
+    rebound es = \ bnds -> size bnds `take` es
 
 --------------------------------------------------------------------------------
 
