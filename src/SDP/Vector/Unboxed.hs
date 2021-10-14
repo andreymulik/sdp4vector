@@ -2,7 +2,7 @@
 
 {- |
     Module      :  SDP.Vector.Unboxed
-    Copyright   :  (c) Andrey Mulik 2019
+    Copyright   :  (c) Andrey Mulik 2019-2021
     License     :  BSD-style
     Maintainer  :  work.a.mulik@gmail.com
     Portability :  portable
@@ -31,6 +31,7 @@ where
 
 import Prelude ()
 import SDP.SafePrelude
+import SDP.Forceable
 import SDP.IndexedM
 import SDP.Indexed
 import SDP.Unboxed
@@ -50,12 +51,13 @@ default ()
 
 --------------------------------------------------------------------------------
 
-{- Nullable, Scan and Estimate instances. -}
+{- Nullable, Forceable, Scan and Estimate instances. -}
 
-instance (Unbox e) => Nullable (Vector e)
-  where
-    isNull = V.null
-    lzero  = V.empty
+instance (Unbox e) => Nullable (Vector e) where isNull = V.null; lzero = V.empty
+
+#if MIN_VERSION_sdp(0,3,0)
+instance (Unbox e) => Forceable (Vector e) where force = V.force
+#endif
 
 instance (Unbox e) => Scan (Vector e) e
 
@@ -84,7 +86,6 @@ instance (Unbox e) => Linear (Vector e) e
     toLast = V.snoc
     
     listL = V.toList
-    force = V.force
     head  = V.head
     tail  = V.tail
     init  = V.init
@@ -110,16 +111,23 @@ instance (Unbox e) => Linear (Vector e) e
     concat = V.concat . toList
     filter = V.filter
     
+#if !MIN_VERSION_sdp(0,3,0)
+    force = V.force
+#endif
+    
     ofoldl  = V.ifoldl . flip
     ofoldr  = V.ifoldr
     o_foldl = V.foldl
     o_foldr = V.foldr
-
+    
+    prefix p = V.foldr (\ e c -> p e ? c + 1 $ 0) 0
+    suffix p = V.foldl (\ c e -> p e ? c + 1 $ 0) 0
+#if !MIN_VERSION_sdp(0,3,0)
 instance (Unbox e) => Split (Vector e) e
   where
-    take = V.take
-    drop = V.drop
-    
+#endif
+    take  = V.take
+    drop  = V.drop
     split = V.splitAt
     
     takeWhile = V.takeWhile
@@ -127,9 +135,6 @@ instance (Unbox e) => Split (Vector e) e
     
     spanl  = V.span
     breakl = V.break
-    
-    prefix p = V.foldr (\ e c -> p e ? c + 1 $ 0) 0
-    suffix p = V.foldl (\ c e -> p e ? c + 1 $ 0) 0
 
 instance (Unbox e) => Bordered (Vector e) Int
   where

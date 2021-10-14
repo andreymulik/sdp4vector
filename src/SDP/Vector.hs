@@ -2,7 +2,7 @@
 
 {- |
     Module      :  SDP.Vector
-    Copyright   :  (c) Andrey Mulik 2019
+    Copyright   :  (c) Andrey Mulik 2019-2021
     License     :  BSD-style
     Maintainer  :  work.a.mulik@gmail.com
     Portability :  portable
@@ -23,6 +23,7 @@ where
 
 import Prelude ()
 import SDP.SafePrelude
+import SDP.Forceable
 import SDP.IndexedM
 import SDP.Indexed
 import SDP.Sort
@@ -45,10 +46,11 @@ default ()
 
 {- Nullable, Zip, Scan and Estimate instances. -}
 
-instance Nullable (Vector e)
-  where
-    isNull = V.null
-    lzero  = V.empty
+instance Nullable (Vector e) where isNull = V.null; lzero = V.empty
+
+#if MIN_VERSION_sdp(0,3,0)
+instance Forceable (Vector e) where force = V.force
+#endif
 
 instance Zip Vector
   where
@@ -114,7 +116,6 @@ instance Linear (Vector e) e
     toLast = V.snoc
     
     listL = V.toList
-    force = V.force
     head  = V.head
     tail  = V.tail
     init  = V.init
@@ -140,14 +141,19 @@ instance Linear (Vector e) e
     concat = V.concat . toList
     filter = V.filter
     
+#if !MIN_VERSION_sdp(0,3,0)
+    force = V.force
+#endif
+    
     ofoldl = V.ifoldl . flip
     ofoldr = V.ifoldr
     
     o_foldl = foldl
     o_foldr = foldr
-
+#if !MIN_VERSION_sdp(0,3,0)
 instance Split (Vector e) e
   where
+#endif
     take  = V.take
     drop  = V.drop
     split = V.splitAt
@@ -229,7 +235,6 @@ instance (MonadIO io) => Freeze io (MIOUnlist io e) (Vector e) where freeze = fm
 
 done :: STArray# s e -> ST s (Vector e)
 done =  freeze
-
 
 
 
