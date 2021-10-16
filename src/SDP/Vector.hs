@@ -23,7 +23,6 @@ where
 
 import Prelude ()
 import SDP.SafePrelude
-import SDP.Forceable
 import SDP.IndexedM
 import SDP.Indexed
 import SDP.Sort
@@ -109,6 +108,13 @@ instance Estimate (Vector e)
 
 {- Linear, Split and Bordered instances. -}
 
+instance Bordered (Vector e) Int
+  where
+    lower    _ = 0
+    sizeOf     = V.length
+    upper   es = V.length es - 1
+    bounds  es = (0, V.length es - 1)
+
 instance Linear (Vector e) e
   where
     single = V.singleton
@@ -139,14 +145,13 @@ instance Linear (Vector e) e
     reverse   = V.reverse
     
     concat = V.concat . toList
+    ofoldl = V.ifoldl . flip
+    ofoldr = V.ifoldr
     filter = V.filter
     
 #if !MIN_VERSION_sdp(0,3,0)
-    force = V.force
+    force  = V.force
 #endif
-    
-    ofoldl = V.ifoldl . flip
-    ofoldr = V.ifoldr
     
     o_foldl = foldl
     o_foldr = foldr
@@ -163,14 +168,6 @@ instance Split (Vector e) e
     
     spanl  = V.span
     breakl = V.break
-
-instance Bordered (Vector e) Int
-  where
-    lower    _ = 0
-    sizeOf     = V.length
-    upper   es = V.length es - 1
-    bounds  es = (0, V.length es - 1)
-    rebound es = \ bnds -> size bnds `take` es
 
 --------------------------------------------------------------------------------
 
@@ -235,6 +232,4 @@ instance (MonadIO io) => Freeze io (MIOUnlist io e) (Vector e) where freeze = fm
 
 done :: STArray# s e -> ST s (Vector e)
 done =  freeze
-
-
 

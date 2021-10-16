@@ -31,7 +31,6 @@ where
 
 import Prelude ()
 import SDP.SafePrelude
-import SDP.Forceable
 import SDP.IndexedM
 import SDP.Indexed
 import SDP.Unboxed
@@ -79,6 +78,13 @@ instance (Unbox e) => Estimate (Vector e)
 
 {- Linear, Split and Bordered instances. -}
 
+instance (Unbox e) => Bordered (Vector e) Int
+  where
+    lower    _ = 0
+    sizeOf     = V.length
+    upper   es = sizeOf es - 1
+    bounds  es = (0, sizeOf es - 1)
+
 instance (Unbox e) => Linear (Vector e) e
   where
     single = V.singleton
@@ -119,9 +125,6 @@ instance (Unbox e) => Linear (Vector e) e
     ofoldr  = V.ifoldr
     o_foldl = V.foldl
     o_foldr = V.foldr
-    
-    prefix p = V.foldr (\ e c -> p e ? c + 1 $ 0) 0
-    suffix p = V.foldl (\ c e -> p e ? c + 1 $ 0) 0
 #if !MIN_VERSION_sdp(0,3,0)
 instance (Unbox e) => Split (Vector e) e
   where
@@ -130,19 +133,14 @@ instance (Unbox e) => Split (Vector e) e
     drop  = V.drop
     split = V.splitAt
     
+    spanl  = V.span
+    breakl = V.break
+    
     takeWhile = V.takeWhile
     dropWhile = V.dropWhile
     
-    spanl  = V.span
-    breakl = V.break
-
-instance (Unbox e) => Bordered (Vector e) Int
-  where
-    lower    _ = 0
-    sizeOf     = V.length
-    upper   es = sizeOf es - 1
-    bounds  es = (0, sizeOf es - 1)
-    rebound es = \ bnds -> size bnds `take` es
+    prefix p = V.foldr (\ e c -> p e ? c + 1 $ 0) 0
+    suffix p = V.foldl (\ c e -> p e ? c + 1 $ 0) 0
 
 --------------------------------------------------------------------------------
 
@@ -204,7 +202,4 @@ ascsBounds =  \ ((x, _) : xs) -> foldr (\ (e, _) (mn, mx) -> (min mn e, max mx e
 
 done :: (Unboxed e, Unbox e) => STBytes# s e -> ST s (Vector e)
 done =  freeze
-
-
-
 
