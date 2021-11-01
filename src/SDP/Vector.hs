@@ -51,6 +51,10 @@ instance Nullable (Vector e) where isNull = V.null; lzero = V.empty
 instance Forceable (Vector e) where force = V.force
 #endif
 
+#if !MIN_VERSION_vector(0,12,0)
+instance Semigroup (Vector e) where (<>) = (V.++)
+#endif
+
 instance Zip Vector
   where
     all6 f as bs cs ds es fs = B.and $ B.zipWith6 f
@@ -114,6 +118,9 @@ instance Bordered (Vector e) Int
     sizeOf     = V.length
     upper   es = V.length es - 1
     bounds  es = (0, V.length es - 1)
+#if MIN_VERSION_sdp(0,3,0)
+    rebound    = V.take . size
+#endif
 
 instance Linear (Vector e) e
   where
@@ -232,4 +239,7 @@ instance (MonadIO io) => Freeze io (MIOUnlist io e) (Vector e) where freeze = fm
 
 done :: STArray# s e -> ST s (Vector e)
 done =  freeze
+
+
+
 

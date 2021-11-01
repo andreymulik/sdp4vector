@@ -78,7 +78,7 @@ test-suite test-vector-boxed
     vector                     >= 0.11 && < 0.13,
     
     QuickCheck                 >= 2.8  && <   3,
-    sdp-quickcheck             >= 0.2  && < 0.3,
+    sdp-quickcheck             >= 0.2  && <   1,
     quickcheck-instances       >= 0.3  && < 0.4,
     
     test-framework             >= 0.8  && < 0.9,
@@ -102,7 +102,7 @@ test-suite test-vector-unboxed
     vector                     >= 0.11 && < 0.13,
     
     QuickCheck                 >= 2.8  && <   3,
-    sdp-quickcheck             >= 0.2  && < 0.3,
+    sdp-quickcheck             >= 0.2  && <   1,
     quickcheck-instances       >= 0.3  && < 0.4,
     
     test-framework             >= 0.8  && < 0.9,
