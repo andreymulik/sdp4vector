@@ -2,7 +2,7 @@
 
 {- |
     Module      :  SDP.Vector
-    Copyright   :  (c) Andrey Mulik 2019-2021
+    Copyright   :  (c) Andrey Mulik 2019-2022
     License     :  BSD-style
     Maintainer  :  work.a.mulik@gmail.com
     Portability :  portable
@@ -49,10 +49,6 @@ instance Nullable (Vector e) where isNull = V.null; lzero = V.empty
 
 #if MIN_VERSION_sdp(0,3,0)
 instance Forceable (Vector e) where force = V.force
-#endif
-
-#if !MIN_VERSION_vector(0,12,0)
-instance Semigroup (Vector e) where (<>) = (V.++)
 #endif
 
 instance Zip Vector
@@ -118,6 +114,7 @@ instance Bordered (Vector e) Int
     sizeOf     = V.length
     upper   es = V.length es - 1
     bounds  es = (0, V.length es - 1)
+    
 #if MIN_VERSION_sdp(0,3,0)
     rebound    = V.take . size
 #endif
@@ -133,9 +130,7 @@ instance Linear (Vector e) e
     tail  = V.tail
     init  = V.init
     last  = V.last
-#if MIN_VERSION_vector(0,12,0)
     nub   = V.uniq
-#endif
     
     (!^) = V.unsafeIndex
     (++) = (V.++)

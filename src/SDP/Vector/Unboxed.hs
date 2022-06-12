@@ -2,7 +2,7 @@
 
 {- |
     Module      :  SDP.Vector.Unboxed
-    Copyright   :  (c) Andrey Mulik 2019-2021
+    Copyright   :  (c) Andrey Mulik 2019-2022
     License     :  BSD-style
     Maintainer  :  work.a.mulik@gmail.com
     Portability :  portable
@@ -58,10 +58,6 @@ instance (Unbox e) => Nullable (Vector e) where isNull = V.null; lzero = V.empty
 instance (Unbox e) => Forceable (Vector e) where force = V.force
 #endif
 
-#if !MIN_VERSION_vector(0,12,0)
-instance (Unbox e) => Semigroup (Vector e) where (<>) = (V.++)
-#endif
-
 instance (Unbox e) => Scan (Vector e) e
 
 instance (Unbox e) => Estimate (Vector e)
@@ -88,8 +84,9 @@ instance (Unbox e) => Bordered (Vector e) Int
     sizeOf     = V.length
     upper   es = sizeOf es - 1
     bounds  es = (0, sizeOf es - 1)
+    
 #if MIN_VERSION_sdp(0,3,0)
-    rebound    = V.take . size
+    rebound = V.take . size
 #endif
 
 instance (Unbox e) => Linear (Vector e) e
@@ -103,9 +100,7 @@ instance (Unbox e) => Linear (Vector e) e
     tail  = V.tail
     init  = V.init
     last  = V.last
-#if MIN_VERSION_vector(0,12,0)
     nub   = V.uniq
-#endif
     
     (!^) = V.unsafeIndex
     (++) = (V.++)
