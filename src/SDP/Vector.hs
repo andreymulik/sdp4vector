@@ -43,13 +43,165 @@ default ()
 
 --------------------------------------------------------------------------------
 
-{- Nullable, Zip, Scan and Estimate instances. -}
+{- Nullable, Forceable and Estimate instances. -}
 
-instance Nullable (Vector e) where isNull = V.null; lzero = V.empty
+instance Nullable (Vector e)
+  where
+    isNull = V.null
+    lzero  = V.empty
 
 #if MIN_VERSION_sdp(0,3,0)
-instance Forceable (Vector e) where force = V.force
+instance Forceable (Vector e)
+  where
+    force = V.force
 #endif
+
+instance Estimate (Vector e)
+  where
+    (<==>) = on (<=>) sizeOf
+    (.>=.) = on  (>=) sizeOf
+    (.<=.) = on  (<=) sizeOf
+    (.>.)  = on  (>)  sizeOf
+    (.<.)  = on  (<)  sizeOf
+    
+    (<.=>) = (<=>) . sizeOf
+    (.>=)  = (>=)  . sizeOf
+    (.<=)  = (<=)  . sizeOf
+    (.>)   = (>)   . sizeOf
+    (.<)   = (<)   . sizeOf
+    
+#if MIN_VERSION_sdp(0,3,0)
+    sizeOf  = V.length
+#endif
+
+--------------------------------------------------------------------------------
+
+{- Semigroup instance. -}
+
+#if !MIN_VERSION_vector(0,12,0)
+instance Semigroup (Vector e)
+  where
+    (<>) = (++)
+#endif
+
+--------------------------------------------------------------------------------
+
+{- Bordered instance. -}
+
+instance Bordered (Vector e) Int
+  where
+    lower   _ = 0
+    upper  es = V.length es - 1
+    bounds es = (0, V.length es - 1)
+    
+#if MIN_VERSION_sdp(0,3,0)
+    rebound = V.take . size
+#else
+    sizeOf  = V.length
+#endif
+
+--------------------------------------------------------------------------------
+
+{- Linear and Split instances. -}
+
+instance Linear (Vector e) e
+  where
+    single = V.singleton
+    toHead = V.cons
+    toLast = V.snoc
+    
+    listL = V.toList
+    head  = V.head
+    tail  = V.tail
+    init  = V.init
+    last  = V.last
+#if MIN_VERSION_vector(0,12,0)
+    nub   = V.uniq
+#endif
+    
+    (!^) = V.unsafeIndex
+    (++) = (V.++)
+    
+    write es = (es //) . single ... (,)
+    
+    concatMap f = V.concatMap f . fromFoldable
+    
+    fromListN = V.fromListN
+    replicate = V.replicate
+    partition = V.partition
+    fromList  = V.fromList
+    reverse   = V.reverse
+    
+    concat = V.concat . toList
+    ofoldl = V.ifoldl . flip
+    ofoldr = V.ifoldr
+    filter = V.filter
+    
+#if MIN_VERSION_sdp(0,3,0)
+    sfoldl = foldl
+    sfoldr = foldr
+#else
+    partitions ps = fmap fromList . partitions ps . toList
+    
+    o_foldl = foldl
+    o_foldr = foldr
+    
+    force = V.force
+#endif
+#if !MIN_VERSION_sdp(0,3,0)
+instance Split (Vector e) e
+  where
+    spanl  = V.span
+    breakl = V.break
+#endif
+    
+    takeWhile = V.takeWhile
+    dropWhile = V.dropWhile
+    
+    take  = V.take
+    drop  = V.drop
+    split = V.splitAt
+
+--------------------------------------------------------------------------------
+
+{- Map and Indexed instances. -}
+
+instance Map (Vector e) Int e
+  where
+    toMap ascs = isNull ascs ? Z $ assoc (l, u) ascs
+      where
+        l = fst $ minimumBy cmpfst ascs
+        u = fst $ maximumBy cmpfst ascs
+    
+    toMap' defvalue ascs = isNull ascs ? Z $ assoc' (l, u) defvalue ascs
+      where
+        l = fst $ minimumBy cmpfst ascs
+        u = fst $ maximumBy cmpfst ascs
+    
+    Z  // ascs = toMap ascs
+    vs // ascs = vs V.// ascs
+    
+    (*$) = toList ... V.findIndices
+    (.!) = V.unsafeIndex
+    (.$) = V.findIndex
+    (!?) = (V.!?)
+    
+    kfoldl = ofoldl
+    kfoldr = ofoldr
+
+instance Indexed (Vector e) Int e
+  where
+    assoc' bnds defvalue ascs = runST $ fromAssocs' bnds defvalue ascs >>= done
+    
+    fromIndexed es' = accum (flip const) es ies
+      where
+        ies  = [ (offset bnds i, e) | (i, e) <- assocs es', inRange bnds i ]
+        es   = replicate (size bnds) undefined
+        bnds = bounds es'
+
+--------------------------------------------------------------------------------
+
+{- Zip instance. -}
 
 instance Zip Vector
   where
@@ -88,125 +240,11 @@ instance Zip Vector
     zipWith5 = V.zipWith5
     zipWith6 = V.zipWith6
 
+--------------------------------------------------------------------------------
+
+{- Scan and Sort instances. -}
+
 instance Scan (Vector e) e
-
-instance Estimate (Vector e)
-  where
-    (<==>) = on (<=>) sizeOf
-    (.>.)  = on  (>)  sizeOf
-    (.<.)  = on  (<)  sizeOf
-    (.<=.) = on  (<=) sizeOf
-    (.>=.) = on  (>=) sizeOf
-    
-    (<.=>) = (<=>) . sizeOf
-    (.>)   = (>)   . sizeOf
-    (.<)   = (<)   . sizeOf
-    (.>=)  = (>=)  . sizeOf
-    (.<=)  = (<=)  . sizeOf
-
---------------------------------------------------------------------------------
-
-{- Linear, Split and Bordered instances. -}
-
-instance Bordered (Vector e) Int
-  where
-    lower    _ = 0
-    sizeOf     = V.length
-    upper   es = V.length es - 1
-    bounds  es = (0, V.length es - 1)
-    
-#if MIN_VERSION_sdp(0,3,0)
-    rebound    = V.take . size
-#endif
-
-instance Linear (Vector e) e
-  where
-    single = V.singleton
-    toHead = V.cons
-    toLast = V.snoc
-    
-    listL = V.toList
-    head  = V.head
-    tail  = V.tail
-    init  = V.init
-    last  = V.last
-    nub   = V.uniq
-    
-    (!^) = V.unsafeIndex
-    (++) = (V.++)
-    
-    write es = (es //) . single ... (,)
-    
-    partitions ps = fmap fromList . partitions ps . toList
-    concatMap   f = V.concatMap f . fromFoldable
-    
-    fromListN = V.fromListN
-    replicate = V.replicate
-    partition = V.partition
-    fromList  = V.fromList
-    reverse   = V.reverse
-    
-    concat = V.concat . toList
-    ofoldl = V.ifoldl . flip
-    ofoldr = V.ifoldr
-    filter = V.filter
-    
-#if !MIN_VERSION_sdp(0,3,0)
-    force  = V.force
-#endif
-    
-    o_foldl = foldl
-    o_foldr = foldr
-#if !MIN_VERSION_sdp(0,3,0)
-instance Split (Vector e) e
-  where
-#endif
-    take  = V.take
-    drop  = V.drop
-    split = V.splitAt
-    
-    takeWhile = V.takeWhile
-    dropWhile = V.dropWhile
-    
-    spanl  = V.span
-    breakl = V.break
-
---------------------------------------------------------------------------------
-
-{- Map, Indexed and Sort instances. -}
-
-instance Map (Vector e) Int e
-  where
-    toMap ascs = isNull ascs ? Z $ assoc (l, u) ascs
-      where
-        l = fst $ minimumBy cmpfst ascs
-        u = fst $ maximumBy cmpfst ascs
-    
-    toMap' defvalue ascs = isNull ascs ? Z $ assoc' (l, u) defvalue ascs
-      where
-        l = fst $ minimumBy cmpfst ascs
-        u = fst $ maximumBy cmpfst ascs
-    
-    Z  // ascs = toMap ascs
-    vs // ascs = vs V.// ascs
-    
-    (*$) = toList ... V.findIndices
-    (.!) = V.unsafeIndex
-    (.$) = V.findIndex
-    (!?) = (V.!?)
-    
-    kfoldl = ofoldl
-    kfoldr = ofoldr
-
-instance Indexed (Vector e) Int e
-  where
-    assoc' bnds defvalue ascs = runST $ fromAssocs' bnds defvalue ascs >>= done
-    
-    fromIndexed es' = accum (flip const) es ies
-      where
-        ies  = [ (offset bnds i, e) | (i, e) <- assocs es', inRange bnds i ]
-        es   = replicate (size bnds) undefined
-        bnds = bounds es'
 
 instance Sort (Vector e) e
   where
@@ -227,14 +265,11 @@ instance (MonadIO io) => Thaw io (Vector e) (MIOUnlist io e) where thaw = fromFo
 instance Freeze (ST s) (STArray# s e) (Vector e) where freeze = fmap fromList . getLeft
 instance Freeze (ST s) (STUnlist s e) (Vector e) where freeze = fmap fromList . getLeft
 
-instance (MonadIO io) => Freeze io (MIOArray# io e) (Vector e) where freeze = fmap fromList . getLeft
-instance (MonadIO io) => Freeze io (MIOUnlist io e) (Vector e) where freeze = fmap fromList . getLeft
+instance MonadIO io => Freeze io (MIOArray# io e) (Vector e) where freeze = fmap fromList . getLeft
+instance MonadIO io => Freeze io (MIOUnlist io e) (Vector e) where freeze = fmap fromList . getLeft
 
 --------------------------------------------------------------------------------
 
 done :: STArray# s e -> ST s (Vector e)
 done =  freeze
-
-
-
 

@@ -52,15 +52,18 @@ default ()
 
 {- Nullable, Forceable, Scan and Estimate instances. -}
 
-instance (Unbox e) => Nullable (Vector e) where isNull = V.null; lzero = V.empty
+instance Unbox e => Nullable (Vector e)
+  where
+    isNull = V.null
+    lzero  = V.empty
 
 #if MIN_VERSION_sdp(0,3,0)
-instance (Unbox e) => Forceable (Vector e) where force = V.force
+instance Unbox e => Forceable (Vector e)
+  where
+    force = V.force
 #endif
 
-instance (Unbox e) => Scan (Vector e) e
-
-instance (Unbox e) => Estimate (Vector e)
+instance Unbox e => Estimate (Vector e)
   where
     (<==>) = on (<=>) sizeOf
     (.>=.) = on (>=)  sizeOf
@@ -73,23 +76,42 @@ instance (Unbox e) => Estimate (Vector e)
     (.<=)  = (<=)  . sizeOf
     (.>)   = (>)   . sizeOf
     (.<)   = (<)   . sizeOf
+    
+#if MIN_VERSION_sdp(0,3,0)
+    sizeOf = V.length
+#endif
 
 --------------------------------------------------------------------------------
 
-{- Linear, Split and Bordered instances. -}
+{- Semigroup instance. -}
 
-instance (Unbox e) => Bordered (Vector e) Int
+#if !MIN_VERSION_vector(0,12,0)
+instance Unbox e => Semigroup (Vector e)
   where
-    lower    _ = 0
-    sizeOf     = V.length
-    upper   es = sizeOf es - 1
-    bounds  es = (0, sizeOf es - 1)
+    (<>) = (++)
+#endif
+
+--------------------------------------------------------------------------------
+
+{- Bordered instance. -}
+
+instance Unbox e => Bordered (Vector e) Int
+  where
+    lower   _ = 0
+    upper  es = sizeOf es - 1
+    bounds es = (0, sizeOf es - 1)
     
 #if MIN_VERSION_sdp(0,3,0)
     rebound = V.take . size
+#else
+    sizeOf  = V.length
 #endif
 
-instance (Unbox e) => Linear (Vector e) e
+--------------------------------------------------------------------------------
+
+{- Linear and Split instances. -}
+
+instance Unbox e => Linear (Vector e) e
   where
     single = V.singleton
     toHead = V.cons
@@ -100,15 +122,16 @@ instance (Unbox e) => Linear (Vector e) e
     tail  = V.tail
     init  = V.init
     last  = V.last
+#if MIN_VERSION_vector(0,12,0)
     nub   = V.uniq
+#endif
     
     (!^) = V.unsafeIndex
     (++) = (V.++)
     
     write es = (es V.//) . single ... (,)
     
-    partitions ps = fmap fromList . partitions ps . listL
-    concatMap   f = concat . foldr ((:) . f) []
+    concatMap f = concat . foldr ((:) . f) []
     
     fromListN = V.fromListN
     replicate = V.replicate
@@ -119,40 +142,52 @@ instance (Unbox e) => Linear (Vector e) e
     concat = V.concat . toList
     filter = V.filter
     
-#if !MIN_VERSION_sdp(0,3,0)
+#if MIN_VERSION_sdp(0,3,0)
+    sfoldl = V.foldl
+    sfoldr = V.foldr
+#else
+    partitions ps = fmap fromList . partitions ps . listL
+    
+    o_foldl = V.foldl
+    o_foldr = V.foldr
+    
     force = V.force
 #endif
     
-    ofoldl  = V.ifoldl . flip
-    ofoldr  = V.ifoldr
-    o_foldl = V.foldl
-    o_foldr = V.foldr
+    ofoldl = V.ifoldl . flip
+    ofoldr = V.ifoldr
 #if !MIN_VERSION_sdp(0,3,0)
-instance (Unbox e) => Split (Vector e) e
+instance Unbox e => Split (Vector e) e
   where
-#endif
-    take  = V.take
-    drop  = V.drop
-    split = V.splitAt
+    prefix p = V.foldr (\ e c -> p e ? c + 1 $ 0) 0
+    suffix p = V.foldl (\ c e -> p e ? c + 1 $ 0) 0
     
-    spanl  = V.span
     breakl = V.break
+    spanl  = V.span
+#endif
     
     takeWhile = V.takeWhile
     dropWhile = V.dropWhile
     
-    prefix p = V.foldr (\ e c -> p e ? c + 1 $ 0) 0
-    suffix p = V.foldl (\ c e -> p e ? c + 1 $ 0) 0
+    take  = V.take
+    drop  = V.drop
+    split = V.splitAt
 
 --------------------------------------------------------------------------------
 
-{- Map, Indexed, IFold and Sort instances. -}
+{- Map and Indexed instances. -}
 
 instance (Unboxed e, Unbox e) => Map (Vector e) Int e
   where
-    toMap ascs = isNull ascs ? Z $ ascsBounds ascs `assoc` ascs
+    toMap ascs = isNull ascs ? Z $ assoc (l, u) ascs
+      where
+        l = fst $ minimumBy cmpfst ascs
+        u = fst $ maximumBy cmpfst ascs
     
-    toMap' e ascs = isNull ascs ? Z $ assoc' (ascsBounds ascs) e ascs
+    toMap' e ascs = isNull ascs ? Z $ assoc' (l, u) e ascs
+      where
+        l = fst $ minimumBy cmpfst ascs
+        u = fst $ maximumBy cmpfst ascs
     
     (.!) = V.unsafeIndex
     (!?) = (V.!?)
@@ -174,6 +209,12 @@ instance (Unboxed e, Unbox e) => Indexed (Vector e) Int e
     
     fromIndexed es = defaultBounds (sizeOf es) `assoc`
       [ (offsetOf es i, e) | (i, e) <- assocs es, indexIn es i ]
+
+--------------------------------------------------------------------------------
+
+{- Scan and Sort instances. -}
+
+instance Unbox e => Scan (Vector e) e
 
 instance (Unboxed e, Unbox e) => Sort (Vector e) e
   where
@@ -199,12 +240,6 @@ instance (MonadIO io, Unboxed e, Unbox e) => Freeze io (MIOUblist io e) (Vector 
 
 --------------------------------------------------------------------------------
 
-ascsBounds :: (Ord a) => [(a, b)] -> (a, a)
-ascsBounds =  \ ((x, _) : xs) -> foldr (\ (e, _) (mn, mx) -> (min mn e, max mx e)) (x, x) xs
-
 done :: (Unboxed e, Unbox e) => STBytes# s e -> ST s (Vector e)
 done =  freeze
-
-
-
 
