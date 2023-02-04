@@ -102,9 +102,9 @@ instance Unbox e => Bordered (Vector e) Int
     bounds es = (0, sizeOf es - 1)
     
 #if MIN_VERSION_sdp(0,3,0)
-    rebound = V.take . size
+    viewOf = V.take . size
 #else
-    sizeOf  = V.length
+    sizeOf = V.length
 #endif
 
 --------------------------------------------------------------------------------
